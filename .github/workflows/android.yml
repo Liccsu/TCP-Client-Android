@@ -33,3 +33,13 @@ jobs:
       with:
         name: upload-apk
         path: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
+
+    - name: Create Release
+      uses: ncipollo/release-action@v1.14.0
+      with:
+        bodyFile: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
+        draft: true
+        generateReleaseNotes: true
+        makeLatest: true
+        prerelease: true
+        token: ${{ github.token }}
