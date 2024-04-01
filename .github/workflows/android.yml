@@ -34,9 +34,13 @@ jobs:
         name: upload-apk
         path: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
 
+    - name: Get current date
+      id: current_date
+      run: echo "CURRENT_DATE=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
+
     - name: Create Release
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ format('{0:yyyyMMddHHmmss}', utcNow()) }}
+        tag_name: ${{ env.CURRENT_DATE }}
         files: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
         generate_release_notes: true
