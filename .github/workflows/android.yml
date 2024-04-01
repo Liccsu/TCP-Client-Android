@@ -24,23 +24,14 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
+      id: prepareArtifact
       run: |
         ./gradlew assembleRelease
         find ${{github.workspace}}/app -name "*.apk"
+        releaseName=`ls app/build/outputs/apk/release/*.apk | awk -F '(/|.zip)' '{print $3}'` && echo "releaseName=$releaseName" >> $GITHUB_OUTPUT
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.3.1
       with:
-        name: upload-apk
+        name: ${{ steps.prepareArtifact.outputs.releaseName }}
         path: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
-
-    - name: Get current date
-      id: current_date
-      run: echo "CURRENT_DATE=$(date +'%Y%m%d%H%M%S')" >> $GITHUB_ENV
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v1
-      with:
-        tag_name: ${{ env.CURRENT_DATE }}
-        files: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
-        generate_release_notes: true
