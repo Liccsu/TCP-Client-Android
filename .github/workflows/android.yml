@@ -24,10 +24,12 @@ jobs:
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
     - name: Build with Gradle
-      run: ./gradlew assembleRelease
+      run: |
+        ./gradlew assembleRelease
+        find ${{github.workspace}}/app -name "*.apk"
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.3.1
       with:
         name: upload-apk
-        path: ${{github.workspace}}/../app/release/*.apk
+        path: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
