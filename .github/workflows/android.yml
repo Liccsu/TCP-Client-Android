@@ -28,7 +28,7 @@ jobs:
       run: |
         ./gradlew assembleRelease
         find ${{github.workspace}}/app -name "*.apk"
-        releaseName=`ls app/build/outputs/apk/release/*.apk | awk -F '(/|.zip)' '{print $3}'` && echo "releaseName=$releaseName" >> $GITHUB_OUTPUT
+        releaseName=`ls app/build/outputs/apk/release/*.apk | awk -F '(/|.apk)' '{print $3}'` && echo "releaseName=$releaseName" >> $GITHUB_OUTPUT
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v4.3.1
