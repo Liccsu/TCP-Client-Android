@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">My ESP</string>
+    <string name="logText">日志:\n</string>
+    <string name="addressHint">地址:</string>
+    <string name="portHint">端口:</string>
+    <string name="connectSwitchOff">断开</string>
+    <string name="connectSwitchOn">连接</string>
+    <string name="messageHint">输入文本</string>
+    <string name="sendButtonText">发送</string>
+</resources>

@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- 上半部分：类似终端的滚动文本日志 -->
+    <ScrollView
+        android:id="@+id/logScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="#000000">
+
+        <TextView
+            android:id="@+id/logTextView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#00FF00"
+            android:text="@string/logText" />
+    </ScrollView>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/addressEditText"
+            android:layout_width="0dp"
+            android:layout_weight="40"
+            android:layout_height="wrap_content"
+            android:hint="@string/addressHint" />
+
+        <EditText
+            android:id="@+id/portEditText"
+            android:layout_width="0dp"
+            android:layout_weight="30"
+            android:inputType="number"
+            android:layout_height="wrap_content"
+            android:hint="@string/portHint" />
+
+        <Switch
+            android:id="@+id/connectSwitch"
+            android:layout_width="0dp"
+            android:layout_weight="30"
+            android:layout_height="wrap_content"
+            android:textOff="@string/connectSwitchOff"
+            android:textOn="@string/connectSwitchOn" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <EditText
+            android:id="@+id/messageEditText"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:hint="@string/messageHint" />
+
+        <Button
+            android:id="@+id/sendButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/sendButtonText" />
+    </LinearLayout>
+</LinearLayout>
