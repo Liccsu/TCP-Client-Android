@@ -30,4 +30,4 @@ jobs:
       uses: actions/upload-artifact@v4.3.1
       with:
         name: upload-apk
-        path: ${{github.workspace}}/app/release/*.apk
+        path: ${{github.workspace}}/../app/release/*.apk
