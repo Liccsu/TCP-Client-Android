@@ -1,8 +1,6 @@
 package com.myesp.myesp;
 
 import android.graphics.Color;
-import android.os.Handler;
-import android.os.Looper;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.TextUtils;
