@@ -7,7 +7,6 @@ android {
     compileSdk 34
 
     applicationVariants.configureEach { variant ->
-        def outputFileDir = "${project.projectDir.absolutePath}/${variant.buildType.name}/${variant.flavorName}/${variant.versionName}"
         def today = new Date()
         def path = ((project.name != "app") ? project.name : rootProject.name.replace(" ", "")) + "_" +
                 ((variant.flavorName != "") ? (variant.flavorName + "_") : "") +
@@ -17,21 +16,6 @@ android {
                 ".apk"
         variant.outputs.forEach {
             it.outputFileName = path
-        }
-
-        variant.getAssembleProvider().configure() {
-            it.doLast {
-                File out = new File(outputFileDir)
-                out.deleteDir()
-                copy {
-                    variant.outputs.forEach { file ->
-                        copy {
-                            from file.outputFile
-                            into out
-                        }
-                    }
-                }
-            }
         }
     }
 
