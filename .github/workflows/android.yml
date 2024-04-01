@@ -35,11 +35,8 @@ jobs:
         path: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
 
     - name: Create Release
-      uses: ncipollo/release-action@v1.14.0
+      uses: softprops/action-gh-release@v1
       with:
-        bodyFile: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
-        draft: true
-        generateReleaseNotes: true
-        makeLatest: true
-        prerelease: true
-        token: ${{ github.token }}
+        tag_name: ${{ format('{0:yyyyMMddHHmmss}', utcNow()) }}
+        files: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
+        generate_release_notes: true
