@@ -1,21 +1,25 @@
-name: Android CI
+name: Android Release CI
 
 on:
   push:
-    branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
-  workflow_dispatch:
+    tags:
+      - 'v*' # 例如: v1.0, v1.0.0, v1.0.0-beta
+  workflow_dispatch: # 允许手动触发
 
 jobs:
-  build:
-
+  build_and_release:
+    name: Build and Release APK
     runs-on: ubuntu-latest
+    permissions:
+      contents: write # 创建 Release 和上传附件所必需的权限
 
     steps:
-    - uses: actions/checkout@v3
-    - name: set up JDK 17
-      uses: actions/setup-java@v3
+    - name: Checkout code
+      uses: actions/checkout@v4
+      # 通常 checkout@v4 会正确处理标签，确保 github.ref_name 可用
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -23,15 +27,51 @@ jobs:
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
-    - name: Build with Gradle
-      id: prepareArtifact
+
+    - name: Build APK and gather info
+      id: build_apk
       run: |
         ./gradlew assembleRelease
-        find ${{github.workspace}}/app -name "*.apk"
-        releaseName=`ls app/build/outputs/apk/release/*.apk | awk -F '(/|.apk)' '{print $3}'` && echo "releaseName=$releaseName" >> $GITHUB_OUTPUT
+        echo "APK build process completed."
+        
+        # 定义 APK 输出目录
+        apk_dir="app/build/outputs/apk/release"
+        echo "apk_directory_path=$apk_dir" >> $GITHUB_OUTPUT
+        
+        # 尝试获取一个 APK 文件名作为 Release Body 中的示例
+        # 使用 -print -quit 来获取找到的第一个匹配文件 (如果有)
+        first_apk_path=$(find "$apk_dir" -name "*.apk" -type f -print -quit)
+        
+        if [ -n "$first_apk_path" ]; then
+          apk_filename=$(basename "$first_apk_path")
+          echo "apk_name_example=$apk_filename" >> $GITHUB_OUTPUT
+          echo "Found example APK: $apk_filename (other APKs might also exist in $apk_dir)"
+        else
+          # 如果没有找到 APK，确保输出一个空字符串，避免后续步骤出错
+          echo "apk_name_example=" >> $GITHUB_OUTPUT 
+          echo "Warning: No APK file found in $apk_dir. Release will be created without specific APK name in body."
+        fi
 
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v4.3.1
+    - name: Create GitHub Release
+      id: create_release
+      uses: softprops/action-gh-release@v2.0.6
       with:
-        name: ${{ steps.prepareArtifact.outputs.releaseName }}
-        path: ${{github.workspace}}/app/build/outputs/apk/release/*.apk
+        # Release 的名称，使用 Git 标签名 (例如 "Release v1.0.2")
+        name: Release ${{ github.ref_name }}
+        # Release 对应的 Git 标签
+        tag_name: ${{ github.ref_name }}
+        # Release 的描述内容
+        body: |
+          Automated release for version ${{ github.ref_name }}.
+          ${{ steps.build_apk.outputs.apk_name_example && format('Example APK: {0}', steps.build_apk.outputs.apk_name_example) || 'APKs are attached as assets below.' }}
+          
+          All built APKs from the `${{ steps.build_apk.outputs.apk_directory_path }}` directory are included.
+        # 要上传的文件 (支持通配符)
+        files: |
+          ${{ steps.build_apk.outputs.apk_directory_path }}/*.apk
+          # 如果您有其他需要包含的文件，例如 mapping 文件:
+          # app/build/outputs/mapping/release/mapping.txt 
+        # draft: false # 如果希望创建为草稿 Release，取消此行注释并设为 true
+        # prerelease: false # 如果是预发布版本，取消此行注释并设为 true (通常 Action 会根据标签格式自动判断)
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Action 需要此 Token 与 GitHub API 交互
