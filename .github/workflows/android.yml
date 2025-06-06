@@ -10,7 +10,7 @@ on:
 
 jobs:
   build_and_release:
-    name: Build and Release APK
+    name: Build and Release Signed APK
     runs-on: ubuntu-latest
     permissions:
       contents: write # 创建 Release 和上传附件所必需的权限
@@ -18,7 +18,6 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
-      # 通常 checkout@v4 会正确处理标签，确保 github.ref_name 可用
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
@@ -27,53 +26,73 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
+    - name: Decode Keystore and Set up Signing
+      id: setup_signing
+      # 仅当所有签名相关的 Secrets 都已设置时才运行此步骤
+      if: secrets.SIGNING_KEY_STORE_BASE64 != null
+      run: |
+        echo "Decoding keystore..."
+        # 定义解码后密钥库文件的存放路径
+        store_file_path="${{ runner.temp }}/keystore.jks"
+        
+        # 将 Base64 编码的 Secret 解码并写入文件
+        echo "${{ secrets.SIGNING_KEY_STORE_BASE64 }}" | base64 --decode > "$store_file_path"
+        
+        # 检查文件是否成功创建
+        if [ -f "$store_file_path" ]; then
+          echo "Keystore file created successfully."
+          # 将文件路径和启用标志作为输出，供后续步骤使用
+          echo "store_file=$store_file_path" >> $GITHUB_OUTPUT
+          echo "signing_enabled=true" >> $GITHUB_OUTPUT
+        else
+          echo "::error::Keystore file could not be created from the secret."
+          exit 1
+        fi
+
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build APK and gather info
+    - name: Build Signed APK and gather info
       id: build_apk
+      # 将签名凭据作为环境变量传递给 Gradle
+      # Gradle 会在 assembleRelease 任务中自动使用这些变量（如果 build.gradle 已正确配置）
+      env:
+        SIGNING_STORE_FILE: ${{ steps.setup_signing.outputs.store_file }}
+        SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+        SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
       run: |
+        # 如果 Gradle 配置正确，此命令现在将生成一个已签名的 APK
         ./gradlew assembleRelease
         echo "APK build process completed."
         
-        # 定义 APK 输出目录
         apk_dir="app/build/outputs/apk/release"
         echo "apk_directory_path=$apk_dir" >> $GITHUB_OUTPUT
         
-        # 尝试获取一个 APK 文件名作为 Release Body 中的示例
-        # 使用 -print -quit 来获取找到的第一个匹配文件 (如果有)
         first_apk_path=$(find "$apk_dir" -name "*.apk" -type f -print -quit)
         
         if [ -n "$first_apk_path" ]; then
           apk_filename=$(basename "$first_apk_path")
           echo "apk_name_example=$apk_filename" >> $GITHUB_OUTPUT
-          echo "Found example APK: $apk_filename (other APKs might also exist in $apk_dir)"
+          echo "Found example APK: $apk_filename"
         else
-          # 如果没有找到 APK，确保输出一个空字符串，避免后续步骤出错
-          echo "apk_name_example=" >> $GITHUB_OUTPUT 
-          echo "Warning: No APK file found in $apk_dir. Release will be created without specific APK name in body."
+          echo "::warning::No APK file found in $apk_dir."
+          echo "apk_name_example=" >> $GITHUB_OUTPUT
         fi
 
     - name: Create GitHub Release
       id: create_release
       uses: softprops/action-gh-release@v2.0.6
       with:
-        # Release 的名称，使用 Git 标签名 (例如 "Release v1.0.2")
         name: Release ${{ github.ref_name }}
-        # Release 对应的 Git 标签
         tag_name: ${{ github.ref_name }}
-        # Release 的描述内容
         body: |
-          Automated release for version ${{ github.ref_name }}.
-          ${{ steps.build_apk.outputs.apk_name_example && format('Example APK: {0}', steps.build_apk.outputs.apk_name_example) || 'APKs are attached as assets below.' }}
+          Automated signed release for version ${{ github.ref_name }}.
+          ${{ steps.build_apk.outputs.apk_name_example && format('APK: {0}', steps.build_apk.outputs.apk_name_example) || 'The signed APK is attached as an asset below.' }}
           
           All built APKs from the `${{ steps.build_apk.outputs.apk_directory_path }}` directory are included.
-        # 要上传的文件 (支持通配符)
         files: |
           ${{ steps.build_apk.outputs.apk_directory_path }}/*.apk
-          # 如果您有其他需要包含的文件，例如 mapping 文件:
-          # app/build/outputs/mapping/release/mapping.txt 
-        # draft: false # 如果希望创建为草稿 Release，取消此行注释并设为 true
-        # prerelease: false # 如果是预发布版本，取消此行注释并设为 true (通常 Action 会根据标签格式自动判断)
+          app/build/outputs/mapping/release/mapping.txt # 同时上传 ProGuard/R8 的 mapping 文件，非常重要！
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Action 需要此 Token 与 GitHub API 交互
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
