@@ -29,7 +29,7 @@ jobs:
     - name: Decode Keystore and Set up Signing
       id: setup_signing
       # 仅当所有签名相关的 Secrets 都已设置时才运行此步骤
-      if: secrets.SIGNING_KEY_STORE_BASE64 != null
+      if: ${{ secrets.SIGNING_KEY_STORE_BASE64 && secrets.SIGNING_STORE_PASSWORD && secrets.SIGNING_KEY_ALIAS && secrets.SIGNING_KEY_PASSWORD }}
       run: |
         echo "Decoding keystore..."
         # 定义解码后密钥库文件的存放路径

@@ -105,9 +105,9 @@ public class Client {
                     outputStream.write(message.getBytes());
                     outputStream.flush();
                     uiCommunicatorIm.updateMessageEditText("");
-                    log.appendLog(Log.INFO, "发送消息:" + message);
+                    log.appendLog(Log.INFO, "Send:" + message);
                 } catch (Exception e) {
-                    log.appendLog(Log.ERR, "发送失败:" + e.getMessage());
+                    log.appendLog(Log.ERR, "Send failed:" + e.getMessage());
                 }
             }).start();
         }
@@ -118,10 +118,10 @@ public class Client {
             try {
                 String receivedMessage;
                 while ((receivedMessage = bufferedReader.readLine()) != null) {
-                    log.appendLog(Log.INFO, "收到消息:" + receivedMessage);
+                    log.appendLog(Log.INFO, "Recv:" + receivedMessage);
                 }
             } catch (Exception e) {
-                log.appendLog(Log.ERR, "接收消息出错: " + e.getMessage());
+                log.appendLog(Log.ERR, "Recv failed: " + e.getMessage());
             }
         });
         receiveThread.start();
