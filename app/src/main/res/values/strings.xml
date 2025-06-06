@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My ESP</string>
+    <string name="app_name">TCPC</string>
     <string name="logText">TCP Client测试工具 By liccsu@163.com\n\n</string>
     <string name="addressHint">地址:</string>
     <string name="portHint">端口:</string>
