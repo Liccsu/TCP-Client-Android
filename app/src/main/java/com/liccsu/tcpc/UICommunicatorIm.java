@@ -1,4 +1,4 @@
-package com.myesp.myesp;
+package com.liccsu.tcpc;
 
 public interface UICommunicatorIm {
     String getAddressEditText();

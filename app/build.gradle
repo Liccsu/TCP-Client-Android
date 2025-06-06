@@ -3,7 +3,7 @@ plugins {
 }
 
 android {
-    namespace 'com.myesp.myesp'
+    namespace 'com.liccsu.tcpc'
     compileSdk 34
 
     applicationVariants.configureEach { variant ->
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.myesp.myesp"
+        applicationId "com.liccsu.tcpc"
         minSdk 32
         targetSdk 34
         versionCode 12

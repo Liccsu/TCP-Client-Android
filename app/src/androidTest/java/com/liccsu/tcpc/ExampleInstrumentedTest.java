@@ -1,4 +1,4 @@
-package com.myesp.myesp;
+package com.liccsu.tcpc;
 
 import android.content.Context;
 
@@ -21,6 +21,6 @@ public class ExampleInstrumentedTest {
     public void useAppContext() {
         // Context of the app under test.
         Context appContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        assertEquals("com.myesp.myesp", appContext.getPackageName());
+        assertEquals("com.liccsu.tcpc", appContext.getPackageName());
     }
 }
