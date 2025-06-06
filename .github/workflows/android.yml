@@ -26,43 +26,44 @@ jobs:
         distribution: 'temurin'
         cache: gradle
 
-    - name: Decode Keystore and Set up Signing
-      id: setup_signing
-      # 仅当所有签名相关的 Secrets 都已设置时才运行此步骤
-      if: ${{ secrets.SIGNING_KEY_STORE_BASE64 && secrets.SIGNING_STORE_PASSWORD && secrets.SIGNING_KEY_ALIAS && secrets.SIGNING_KEY_PASSWORD }}
+    - name: Check for required secrets
+      id: check_secrets
+      env:
+        KEY_STORE_B64: ${{ secrets.SIGNING_KEY_STORE_BASE64 }}
+        STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+        KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+      run: |
+        if [ -n "$KEY_STORE_B64" ] && \
+           [ -n "$STORE_PASSWORD" ] && \
+           [ -n "$KEY_ALIAS" ] && \
+           [ -n "$KEY_PASSWORD" ]; then
+          echo "secrets_present=true" >> $GITHUB_OUTPUT
+        else
+          echo "secrets_present=false" >> $GITHUB_OUTPUT
+          echo "::warning::One or more signing secrets are missing. An unsigned APK will be built, but no GitHub Release will be created."
+        fi
+
+    - name: Decode Keystore
+      id: decode_keystore
+      if: steps.check_secrets.outputs.secrets_present == 'true'
       run: |
         echo "Decoding keystore..."
-        # 定义解码后密钥库文件的存放路径
         store_file_path="${{ runner.temp }}/keystore.jks"
-        
-        # 将 Base64 编码的 Secret 解码并写入文件
         echo "${{ secrets.SIGNING_KEY_STORE_BASE64 }}" | base64 --decode > "$store_file_path"
-        
-        # 检查文件是否成功创建
-        if [ -f "$store_file_path" ]; then
-          echo "Keystore file created successfully."
-          # 将文件路径和启用标志作为输出，供后续步骤使用
-          echo "store_file=$store_file_path" >> $GITHUB_OUTPUT
-          echo "signing_enabled=true" >> $GITHUB_OUTPUT
-        else
-          echo "::error::Keystore file could not be created from the secret."
-          exit 1
-        fi
+        echo "store_file=$store_file_path" >> $GITHUB_OUTPUT
 
     - name: Grant execute permission for gradlew
       run: chmod +x gradlew
 
-    - name: Build Signed APK and gather info
+    - name: Build APK
       id: build_apk
-      # 将签名凭据作为环境变量传递给 Gradle
-      # Gradle 会在 assembleRelease 任务中自动使用这些变量（如果 build.gradle 已正确配置）
       env:
-        SIGNING_STORE_FILE: ${{ steps.setup_signing.outputs.store_file }}
+        SIGNING_STORE_FILE: ${{ steps.decode_keystore.outputs.store_file }}
         SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
         SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
         SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
       run: |
-        # 如果 Gradle 配置正确，此命令现在将生成一个已签名的 APK
         ./gradlew assembleRelease
         echo "APK build process completed."
         
